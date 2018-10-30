@@ -18,7 +18,10 @@ Notes: You will need to specify what port you would like the webapp to be
 served from. You will also need to include the serial port address as a command
 line input.
 */
-
+const fs = require('fs');
+var PDFDocument = require('pdfkit');
+doc = new PDFDocument;
+doc.pipe(fs.createWriteStream('public/generatedPDF.pdf'));
 var express = require('express'); // web server application
 var app = express(); // webapp
 var http = require('http').Server(app); // connects http library to server
@@ -87,8 +90,27 @@ const parser = new Readline({
 serial.pipe(parser);
 parser.on('data', function(data) {
   console.log('Data:', data);
-  io.emit('server-msg', data);
+  if (data == "light") {  
+    var imageName = new Date().toString().replace(/[&\/\\#,+()$~%.'":*?<>{}\s-]/g, '');
+
+    console.log('making a making a picture at'+ imageName); // Second, the name is logged to$
+
+    //Third, the picture is  taken and saved to the `public/`` folder
+    NodeWebcam.capture('public/'+imageName, opts, function( err, data ) {
+	io.emit('newPicture',(imageName+'.jpg'));
+        doc.image('public/'+imageName+'.jpg', {
+          fit: [500, 500],
+          align: 'center',
+          valign: 'center'
+        });
+        doc.end()
+
 });
+
+    io.emit('server-msg', data);
+  }
+});
+
 //----------------------------------------------------------------------------//
 
 
